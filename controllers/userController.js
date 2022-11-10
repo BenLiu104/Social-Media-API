@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Thought = require('../models/Thought');
 
 module.exports = {
   getUsers(req, res) {
@@ -26,7 +27,65 @@ module.exports = {
   },
 
   // update a user
-  // updateSingleUser(req,res){
+  async updateSingleUser(req, res) {
+    try {
+      const result = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        { $set: req.body },
+        { new: true }
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(400).json(error);
+    }
+  },
 
-  // }
+  //delete a user
+  async delSingleUser(req, res) {
+    try {
+      const delUser = await User.findOneAndRemove({ _id: req.params.userId });
+      if (delUser) {
+        for (const thought of delUser.thoughts) {
+          let result = await Thought.deleteOne({
+            _id: thought._id,
+          });
+        }
+        res.json(`User ${delUser.username} deleted`);
+      } else {
+        res.status(404).json('No such user ID');
+      }
+    } catch (error) {
+      res.status(400).json(error);
+    }
+  },
+
+  //add a new friend
+  async newFriend(req, res) {
+    try {
+      const result = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        { $addToSet: { friends: req.params.friendId } },
+        { new: true, runValidators: true }
+      );
+      console.log(result);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json(error);
+    }
+  },
+
+  //delete a friend
+  async delFriend(req, res) {
+    try {
+      const result = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        { $pull: { friends: req.params.friendId } },
+        { new: true, runValidators: true }
+      );
+      console.log(result);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json(error);
+    }
+  },
 };
